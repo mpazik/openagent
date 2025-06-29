@@ -44,12 +44,12 @@ func (m statusComponent) logo() string {
 		Render
 
 	open := base("open")
-	code := emphasis("code ")
+	agent := emphasis("agent ")
 	version := base(m.app.Version)
 	return styles.NewStyle().
 		Background(t.BackgroundElement()).
 		Padding(0, 1).
-		Render(open + code + version)
+		Render(open + agent + version)
 }
 
 func formatTokensAndCost(tokens float64, contextWindow float64, cost float64) string {

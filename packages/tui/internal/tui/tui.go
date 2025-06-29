@@ -612,18 +612,25 @@ func (a appModel) home(width int) string {
 █▀▀█ █▀▀█ █▀▀ █▀▀▄ 
 █░░█ █░░█ █▀▀ █░░█ 
 ▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `
-	code := `
-█▀▀ █▀▀█ █▀▀▄ █▀▀
-█░░ █░░█ █░░█ █▀▀
-▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`
+	agent := `
+█▀▀█ █▀▀█ █▀▀ █▀▀▄ ▀█▀
+█▄▄█ █░▄▄ █▀▀ █░░█  █
+▀  ▀ █▄▄█ ▀▀▀ ▀  ▀  ▀ `
 
 	logo := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		muted(open),
-		base(code),
+		base(agent),
 	)
 	// cwd := app.Info.Path.Cwd
 	// config := app.Info.Path.Config
+
+  forkNoteStyle := styles.NewStyle().
+    Foreground(t.Text()).
+    Background(t.Background()).
+    Width(lipgloss.Width(logo)).
+    Align(lipgloss.Left)
+  forkNote := forkNoteStyle.Render("fork of sst/opencode")
 
 	versionStyle := styles.NewStyle().
 		Foreground(t.TextMuted()).
@@ -632,7 +639,7 @@ func (a appModel) home(width int) string {
 		Align(lipgloss.Right)
 	version := versionStyle.Render(a.app.Version)
 
-	logoAndVersion := strings.Join([]string{logo, version}, "\n")
+	logoAndVersion := strings.Join([]string{logo, forkNote, version}, "\n")
 	logoAndVersion = lipgloss.PlaceHorizontal(
 		width,
 		lipgloss.Center,

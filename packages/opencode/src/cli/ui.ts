@@ -4,9 +4,9 @@ import { NamedError } from "../util/error"
 
 export namespace UI {
   const LOGO = [
-    [`█▀▀█ █▀▀█ █▀▀ █▀▀▄ `, `█▀▀ █▀▀█ █▀▀▄ █▀▀`],
-    [`█░░█ █░░█ █▀▀ █░░█ `, `█░░ █░░█ █░░█ █▀▀`],
-    [`▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `, `▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`],
+    [`█▀▀█ █▀▀█ █▀▀ █▀▀▄ `, `█▀▀█ █▀▀█ █▀▀ █▀▀▄ ▀█▀`],
+    [`█░░█ █░░█ █▀▀ █░░█ `, `█▄▄█ █░▄▄ █▀▀ █░░█  █ `],
+    [`▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `, `▀  ▀ █▄▄█ ▀▀▀ ▀  ▀  ▀ `],
   ]
 
   export const CancelledError = NamedError.create("UICancelledError", z.void())
@@ -55,6 +55,8 @@ export namespace UI {
       result.push(row[1])
       result.push(EOL)
     }
+    result.push(Style.TEXT_INFO_BOLD)
+    result.push("fork of sst/opencode")
     return result.join("").trimEnd()
   }
 
