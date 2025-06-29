@@ -15,7 +15,7 @@ else
     done
     script_dir="$(dirname "$script_path")"
     script_dir="$(cd "$script_dir" && pwd)"
-    
+
     # Map platform names
     case "$(uname -s)" in
         Darwin) platform="darwin" ;;
@@ -23,19 +23,19 @@ else
         MINGW*|CYGWIN*|MSYS*) platform="win32" ;;
         *) platform="$(uname -s | tr '[:upper:]' '[:lower:]')" ;;
     esac
-    
-    # Map architecture names  
+
+    # Map architecture names
     case "$(uname -m)" in
         x86_64|amd64) arch="x64" ;;
         aarch64) arch="arm64" ;;
         armv7l) arch="arm" ;;
         *) arch="$(uname -m)" ;;
     esac
-    
-    name="opencode-${platform}-${arch}"
-    binary="opencode"
-    [ "$platform" = "win32" ] && binary="opencode.exe"
-    
+
+    name="openagent-${platform}-${arch}"
+    binary="openagent"
+    [ "$platform" = "win32" ] && binary="openagent.exe"
+
     # Search for the binary starting from real script location
     resolved=""
     current_dir="$script_dir"
@@ -47,9 +47,9 @@ else
         fi
         current_dir="$(dirname "$current_dir")"
     done
-    
+
     if [ -z "$resolved" ]; then
-        printf "It seems that your package manager failed to install the right version of the opencode CLI for your platform. You can try manually installing the \"%s\" package\n" "$name" >&2
+        printf "It seems that your package manager failed to install the right version of the openagent CLI for your platform. You can try manually installing the \"%s\" package\n" "$name" >&2
         exit 1
     fi
 fi

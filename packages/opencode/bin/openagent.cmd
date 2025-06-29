@@ -24,8 +24,8 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     set "arch=x64"
 )
 
-set "name=opencode-!platform!-!arch!"
-set "binary=opencode.exe"
+set "name=openagent-!platform!-!arch!"
+set "binary=openagent.exe"
 
 rem Search for the binary starting from script location
 set "resolved="
@@ -48,7 +48,7 @@ set "current_dir=%parent_dir%"
 goto :search_loop
 
 :not_found
-echo It seems that your package manager failed to install the right version of the opencode CLI for your platform. You can try manually installing the "%name%" package >&2
+echo It seems that your package manager failed to install the right version of the openagent CLI for your platform. You can try manually installing the "%name%" package >&2
 exit /b 1
 
 :execute

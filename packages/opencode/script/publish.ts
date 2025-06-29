@@ -2,10 +2,28 @@
 
 import { $ } from "bun"
 
-import pkg from "../package.json"
+const pkgName = "openagent"
 
 const dry = process.argv.includes("--dry")
 const snapshot = process.argv.includes("--snapshot")
+const target = process.argv.includes("--target")
+
+let customTarget: string[] | undefined = undefined
+if (target) {
+  const index = process.argv.indexOf("--target")
+  if (index !== -1 && process.argv[index + 1]) {
+    const targetCandidate = process.argv[index + 1]
+    const split = targetCandidate.split("-")
+    if (split.length === 2) {
+      customTarget = split
+    } else {
+      console.error(
+        "Invalid target format. Use --target os-arch (e.g., linux-x64)",
+      )
+      process.exit(1)
+    }
+  }
+}
 
 const version = snapshot
   ? `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
@@ -24,13 +42,15 @@ const GOARCH: Record<string, string> = {
   x64: "amd64",
 }
 
-const targets = [
-  ["linux", "arm64"],
-  ["linux", "x64"],
-  ["darwin", "x64"],
-  ["darwin", "arm64"],
-  ["windows", "x64"],
-]
+const targets = customTarget
+  ? [customTarget]
+  : [
+      ["linux", "arm64"],
+      ["linux", "x64"],
+      ["darwin", "x64"],
+      ["darwin", "arm64"],
+      ["windows", "x64"],
+    ]
 
 await $`rm -rf dist`
 
@@ -38,12 +58,13 @@ const optionalDependencies: Record<string, string> = {}
 const npmTag = snapshot ? "snapshot" : "latest"
 for (const [os, arch] of targets) {
   console.log(`building ${os}-${arch}`)
-  const name = `${pkg.name}-${os}-${arch}`
+  const name = `${pkgName}-${os}-${arch}`
   await $`mkdir -p dist/${name}/bin`
   await $`CGO_ENABLED=0 GOOS=${os} GOARCH=${GOARCH[arch]} go build -ldflags="-s -w -X main.Version=${version}" -o ../opencode/dist/${name}/bin/tui ../tui/cmd/opencode/main.go`.cwd(
     "../tui",
   )
-  await $`bun build --define OPENCODE_VERSION="'${version}'" --compile --minify --target=bun-${os}-${arch} --outfile=dist/${name}/bin/opencode ./src/index.ts ./dist/${name}/bin/tui`
+  await $`bun build --define OPENCODE_VERSION="'${version}'" --compile --minify --target=bun-${os}-${arch} --outfile=dist/${name}/bin/openagent ./src/index.ts ./dist/${name}/bin/tui`
+
   await $`rm -rf ./dist/${name}/bin/tui`
   await Bun.file(`dist/${name}/package.json`).write(
     JSON.stringify(
@@ -62,28 +83,42 @@ for (const [os, arch] of targets) {
   optionalDependencies[name] = version
 }
 
-await $`mkdir -p ./dist/${pkg.name}`
-await $`cp -r ./bin ./dist/${pkg.name}/bin`
-await $`cp ./script/postinstall.mjs ./dist/${pkg.name}/postinstall.mjs`
-await Bun.file(`./dist/${pkg.name}/package.json`).write(
+await $`mkdir -p ./dist/${pkgName}`
+await $`cp -r ./bin ./dist/${pkgName}/bin`
+await $`cp ./script/postinstall.mjs ./dist/${pkgName}/postinstall.mjs`
+
+// Build the export files
+await $`mkdir -p ./dist/${pkgName}/lib`
+await $`bun build ./src/export.ts --outdir ./dist/${pkgName}/lib --target node --format esm`
+await $`bunx tsc ./src/export.ts --declaration --emitDeclarationOnly --outDir ./dist/${pkgName}/lib --moduleResolution bundler --module esnext --target esnext --skipLibCheck`
+
+await Bun.file(`./dist/${pkgName}/package.json`).write(
   JSON.stringify(
     {
-      name: pkg.name + "-ai",
+      name: pkgName + "-ai",
       bin: {
-        [pkg.name]: `./bin/${pkg.name}`,
+        [pkgName]: `./bin/${pkgName}`,
       },
       scripts: {
         postinstall: "node ./postinstall.mjs",
       },
       version,
       optionalDependencies,
+      type: "module",
+      exports: {
+        ".": {
+          import: "./lib/export.js",
+          types: "./lib/export.d.ts",
+        },
+      },
+      types: "./lib/export.d.ts",
     },
     null,
     2,
   ),
 )
 if (!dry)
-  await $`cd ./dist/${pkg.name} && bun publish --access public --tag ${npmTag}`
+  await $`cd ./dist/${pkgName} && bun publish --access public --tag ${npmTag}`
 
 if (!snapshot) {
   // Github Release

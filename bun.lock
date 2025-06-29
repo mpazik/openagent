@@ -21,7 +21,7 @@
       "name": "opencode",
       "version": "0.0.5",
       "bin": {
-        "opencode": "./bin/opencode",
+        "openagent": "./bin/openagent",
       },
       "dependencies": {
         "@clack/prompts": "0.11.0",

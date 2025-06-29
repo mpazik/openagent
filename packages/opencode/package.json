@@ -9,7 +9,7 @@
     "dev": "bun run ./src/index.ts"
   },
   "bin": {
-    "opencode": "./bin/opencode"
+    "openagent": "./bin/openagent"
   },
   "exports": {
     "./*": "./src/*.ts"

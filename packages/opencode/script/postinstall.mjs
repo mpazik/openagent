@@ -49,8 +49,8 @@ function detectPlatformAndArch() {
 
 function findBinary() {
   const { platform, arch } = detectPlatformAndArch()
-  const packageName = `opencode-${platform}-${arch}`
-  const binary = platform === "win32" ? "opencode.exe" : "opencode"
+  const packageName = `openagent-${platform}-${arch}`
+  const binary = platform === "win32" ? "openagent.exe" : "openagent"
 
   try {
     // Use require.resolve to find the package
@@ -71,7 +71,7 @@ function findBinary() {
 function main() {
   try {
     const binaryPath = findBinary()
-    const binScript = path.join(__dirname, "bin", "opencode")
+    const binScript = path.join(__dirname, "bin", "openagent")
 
     // Remove existing bin script if it exists
     if (fs.existsSync(binScript)) {
@@ -80,9 +80,9 @@ function main() {
 
     // Create symlink to the actual binary
     fs.symlinkSync(binaryPath, binScript)
-    console.log(`opencode binary symlinked: ${binScript} -> ${binaryPath}`)
+    console.log(`openagent binary symlinked: ${binScript} -> ${binaryPath}`)
   } catch (error) {
-    console.error("Failed to create opencode binary symlink:", error.message)
+    console.error("Failed to create openagent binary symlink:", error.message)
     process.exit(1)
   }
 }
