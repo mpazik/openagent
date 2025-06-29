@@ -89,6 +89,16 @@ func (a appModel) Init() tea.Cmd {
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
+	if a.app.InitialMessage != "" {
+		cmds = append(cmds, func() tea.Msg {
+			return app.SetEditorValueMsg(a.app.InitialMessage)
+		})
+		// Trigger submission after a short delay to ensure editor is set
+		cmds = append(cmds, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+			return commands.ExecuteCommandMsg(a.app.Commands[commands.InputSubmitCommand])
+		}))
+	}
+
 	return tea.Batch(cmds...)
 }
 

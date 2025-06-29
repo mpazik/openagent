@@ -18,6 +18,11 @@ export const TuiCommand = cmd({
     yargs.positional("project", {
       type: "string",
       describe: "path to start opencode in",
+    })
+    .option("message", {
+      alias: ["s"],
+      type: "string",
+      describe: "initial message to send",
     }),
   handler: async (args) => {
     while (true) {
@@ -71,6 +76,7 @@ export const TuiCommand = cmd({
             ...process.env,
             OPENCODE_SERVER: server.url.toString(),
             OPENCODE_APP_INFO: JSON.stringify(app),
+            ...(args.message && { OPENCODE_INIT_MESSAGE: args.message }),
           },
           onExit: () => {
             server.stop()

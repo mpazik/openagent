@@ -21,17 +21,18 @@ import (
 )
 
 type App struct {
-	Info      opencode.App
-	Version   string
-	StatePath string
-	Config    *opencode.Config
-	Client    *opencode.Client
-	State     *config.State
-	Provider  *opencode.Provider
-	Model     *opencode.Model
-	Session   *opencode.Session
-	Messages  []opencode.Message
-	Commands  commands.CommandRegistry
+	Info           opencode.App
+	Version        string
+	StatePath      string
+	Config         *opencode.Config
+	Client         *opencode.Client
+	State          *config.State
+	Provider       *opencode.Provider
+	Model          *opencode.Model
+	Session        *opencode.Session
+	Messages       []opencode.Message
+	Commands       commands.CommandRegistry
+	InitialMessage string
 }
 
 type SessionSelectedMsg = *opencode.Session
@@ -52,12 +53,14 @@ type OptimisticMessageAddedMsg struct {
 type FileRenderedMsg struct {
 	FilePath string
 }
+type SetEditorValueMsg string
 
 func New(
 	ctx context.Context,
 	version string,
 	appInfo opencode.App,
 	httpClient *opencode.Client,
+	initialMessage string,
 ) (*App, error) {
 	util.RootPath = appInfo.Path.Root
 	util.CwdPath = appInfo.Path.Cwd
@@ -109,15 +112,16 @@ func New(
 	slog.Debug("Loaded config", "config", configInfo)
 
 	app := &App{
-		Info:      appInfo,
-		Version:   version,
-		StatePath: appStatePath,
-		Config:    configInfo,
-		State:     appState,
-		Client:    httpClient,
-		Session:   &opencode.Session{},
-		Messages:  []opencode.Message{},
-		Commands:  commands.LoadFromConfig(configInfo),
+		Info:           appInfo,
+		Version:        version,
+		StatePath:      appStatePath,
+		Config:         configInfo,
+		State:          appState,
+		Client:         httpClient,
+		Session:        &opencode.Session{},
+		Messages:       []opencode.Message{},
+		Commands:       commands.LoadFromConfig(configInfo),
+		InitialMessage: initialMessage,
 	}
 
 	return app, nil

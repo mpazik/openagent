@@ -33,6 +33,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	initialMessage := os.Getenv("OPENCODE_INIT_MESSAGE")
+
 	logfile := filepath.Join(appInfo.Path.Data, "log", "tui.log")
 	if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
 		err := os.MkdirAll(filepath.Dir(logfile), 0755)
@@ -65,7 +67,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app_, err := app.New(ctx, version, appInfo, httpClient)
+	app_, err := app.New(ctx, version, appInfo, httpClient, initialMessage)
 	if err != nil {
 		panic(err)
 	}
