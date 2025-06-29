@@ -423,12 +423,12 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
-		container := min(a.width, 84)
+		container := min(a.width, 124)
 		if a.fileViewer.HasFile() {
 			if a.width < fileViewerFullWidthCutoff {
 				container = a.width
 			} else {
-				container = min(min(a.width, max(a.width/2, 50)), 84)
+				container = min(min(a.width, max(a.width/2, 50)), 124)
 			}
 		}
 		layout.Current = &layout.LayoutInfo{
@@ -609,8 +609,8 @@ func (a appModel) home(width int) string {
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
 
 	open := `
-█▀▀█ █▀▀█ █▀▀ █▀▀▄ 
-█░░█ █░░█ █▀▀ █░░█ 
+█▀▀█ █▀▀█ █▀▀ █▀▀▄
+█░░█ █░░█ █▀▀ █░░█
 ▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `
 	agent := `
 █▀▀█ █▀▀█ █▀▀ █▀▀▄ ▀█▀
