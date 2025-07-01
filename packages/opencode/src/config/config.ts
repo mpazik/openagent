@@ -15,7 +15,7 @@ export namespace Config {
 
   export const state = App.state("config", async (app) => {
     let result = await global()
-    for (const file of ["opencode.jsonc", "opencode.json"]) {
+    for (const file of ["opencode.ts", "opencode.jsonc", "opencode.json"]) {
       const found = await Filesystem.findUp(file, app.path.cwd, app.path.root)
       for (const resolved of found.toReversed()) {
         result = mergeDeep(result, await load(resolved))
@@ -239,6 +239,10 @@ export namespace Config {
   })
 
   async function load(path: string) {
+    if (path.endsWith('.ts')) {
+      return await loadTypescript(path)
+    }
+
     const data = await Bun.file(path)
       .json()
       .catch((err) => {
@@ -247,6 +251,21 @@ export namespace Config {
       })
 
     const parsed = Info.safeParse(data)
+    if (parsed.success) return parsed.data
+    throw new InvalidError({ path, issues: parsed.error.issues })
+  }
+
+  async function loadTypescript(path: string): Promise<Info> {
+    let module: any
+    try {
+      module = await import(path)
+    } catch (err) {
+      if (err instanceof InvalidError) throw err
+      throw new TypescriptError({ path }, { cause: err })
+    }
+    const config = module.default || module
+
+    const parsed = Info.safeParse(config)
     if (parsed.success) return parsed.data
     throw new InvalidError({ path, issues: parsed.error.issues })
   }
@@ -263,6 +282,13 @@ export namespace Config {
     z.object({
       path: z.string(),
       issues: z.custom<z.ZodIssue[]>().optional(),
+    }),
+  )
+
+  export const TypescriptError = NamedError.create(
+    "ConfigTypescriptError",
+    z.object({
+      path: z.string(),
     }),
   )
 
