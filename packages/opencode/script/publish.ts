@@ -55,7 +55,7 @@ const targets = customTarget
 await $`rm -rf dist`
 
 const optionalDependencies: Record<string, string> = {}
-const npmTag = snapshot ? "snapshot" : "latest"
+const npmTag = "latest" // publish as latest by default
 for (const [os, arch] of targets) {
   console.log(`building ${os}-${arch}`)
   const name = `${pkgName}-${os}-${arch}`
