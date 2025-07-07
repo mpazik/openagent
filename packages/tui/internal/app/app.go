@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"os"
 
 	"log/slog"
 
@@ -33,6 +34,7 @@ type App struct {
 	Messages       []opencode.Message
 	Commands       commands.CommandRegistry
 	InitialMessage string
+	SessionID string
 }
 
 type SessionSelectedMsg = *opencode.Session
@@ -61,6 +63,7 @@ func New(
 	appInfo opencode.App,
 	httpClient *opencode.Client,
 	initialMessage string,
+	sessionID string,
 ) (*App, error) {
 	util.RootPath = appInfo.Path.Root
 	util.CwdPath = appInfo.Path.Cwd
@@ -85,7 +88,12 @@ func New(
 		appState.Theme = configInfo.Theme
 	}
 
-	if configInfo.Model != "" {
+	modelOverride := os.Getenv("OPENCODE_MODEL")
+	if modelOverride != "" {
+		splits := strings.Split(modelOverride, "/")
+		appState.Provider = splits[0]
+		appState.Model = strings.Join(splits[1:], "/")
+	} else if configInfo.Model != "" {
 		splits := strings.Split(configInfo.Model, "/")
 		appState.Provider = splits[0]
 		appState.Model = strings.Join(splits[1:], "/")
@@ -122,6 +130,7 @@ func New(
 		Messages:       []opencode.Message{},
 		Commands:       commands.LoadFromConfig(configInfo),
 		InitialMessage: initialMessage,
+		SessionID: sessionID,
 	}
 
 	return app, nil

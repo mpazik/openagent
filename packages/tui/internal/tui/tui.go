@@ -99,6 +99,25 @@ func (a appModel) Init() tea.Cmd {
 		}))
 	}
 
+	if a.app.SessionID != "" {
+		cmds = append(cmds, func() tea.Msg {
+			ctx := context.Background()
+			sessions, err := a.app.ListSessions(ctx)
+			if err != nil {
+				slog.Error("Failed to list sessions", "error", err)
+				return toast.NewErrorToast("Failed to load session")()
+			}
+
+			for _, session := range sessions {
+				if session.ID == a.app.SessionID {
+					return app.SessionSelectedMsg(&session)
+				}
+			}
+
+			return toast.NewErrorToast("Session not found: " + a.app.SessionID)()
+		})
+	}
+
 	return tea.Batch(cmds...)
 }
 

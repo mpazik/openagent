@@ -24,6 +24,8 @@ func main() {
 	}
 
 	url := os.Getenv("OPENCODE_SERVER")
+	initialMessage := os.Getenv("OPENCODE_INIT_MESSAGE")
+	sessionID := os.Getenv("OPENCODE_SESSION")
 
 	appInfoStr := os.Getenv("OPENCODE_APP_INFO")
 	var appInfo opencode.App
@@ -32,8 +34,6 @@ func main() {
 		slog.Error("Failed to unmarshal app info", "error", err)
 		os.Exit(1)
 	}
-
-	initialMessage := os.Getenv("OPENCODE_INIT_MESSAGE")
 
 	logfile := filepath.Join(appInfo.Path.Data, "log", "tui.log")
 	if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
@@ -67,7 +67,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app_, err := app.New(ctx, version, appInfo, httpClient, initialMessage)
+	app_, err := app.New(ctx, version, appInfo, httpClient, initialMessage, sessionID)
 	if err != nil {
 		panic(err)
 	}
