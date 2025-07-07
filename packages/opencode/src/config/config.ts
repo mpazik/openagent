@@ -9,21 +9,34 @@ import { Global } from "../global"
 import fs from "fs/promises"
 import { lazy } from "../util/lazy"
 import { NamedError } from "../util/error"
+import { Agent } from "../agent"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
 
   export const state = App.state("config", async (app) => {
     let result = await global()
-    for (const file of ["opencode.ts", "opencode.jsonc", "opencode.json"]) {
+
+    for (const file of [
+      "openagent.ts",
+      "opencode.ts",
+      "opencode.jsonc",
+      "opencode.json",
+    ]) {
       const found = await Filesystem.findUp(file, app.path.cwd, app.path.root)
       for (const resolved of found.toReversed()) {
-        result = mergeDeep(result, await load(resolved))
+        log.info("loading config", { file: resolved })
+        const loaded = await load(resolved)
+        result = mergeDeep(result, loaded)
       }
     }
-    log.info("loaded", result)
 
-    return result
+    log.info("loaded", {
+      ...result,
+      agents: result.agents?.map((a) => a.id),
+    })
+
+    return { ...result }
   })
 
   export const McpLocal = z
@@ -180,6 +193,10 @@ export namespace Config {
         .array(z.string())
         .optional()
         .describe("Additional instruction files or patterns to include"),
+      agents: z
+        .array(Agent.Info)
+        .optional()
+        .describe("Custom agent templates for specialized AI assistants"),
       experimental: z
         .object({
           hook: z
@@ -238,8 +255,8 @@ export namespace Config {
     return result
   })
 
-  async function load(path: string) {
-    if (path.endsWith('.ts')) {
+  async function load(path: string): Promise<Info> {
+    if (path.endsWith(".ts")) {
       return await loadTypescript(path)
     }
 

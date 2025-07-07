@@ -37,9 +37,17 @@ import { NamedError } from "../util/error"
 import { Message } from "./message"
 import { SystemPrompt } from "./system"
 import { FileTime } from "../file/time"
+import { Agent } from "../agent"
+import { AgentServices } from "../agent/services"
+import { ToolServices } from "../tool/services"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
+
+  const DEFAULT_TITLE_PREFIX = {
+    NEW_SESSION: "New Session",
+    CHILD_SESSION: "Child session",
+  } as const
 
   export const Info = z
     .object({
@@ -54,8 +62,11 @@ export namespace Session {
       version: z.string(),
       time: z.object({
         created: z.number(),
+
         updated: z.number(),
       }),
+      agent: z.string().optional(),
+      agentContext: Agent.Context,
       revert: z
         .object({
           messageID: z.string(),
@@ -126,14 +137,12 @@ export namespace Session {
     },
   )
 
-  export async function create(parentID?: string) {
+  export async function create(parentID?: string, title?: string) {
     const result: Info = {
       id: Identifier.descending("session"),
       version: Installation.VERSION,
       parentID,
-      title:
-        (parentID ? "Child session - " : "New Session - ") +
-        new Date().toISOString(),
+      title: `${title ?? (parentID ? DEFAULT_TITLE_PREFIX.CHILD_SESSION : DEFAULT_TITLE_PREFIX.NEW_SESSION)} - ${new Date().toISOString()}`,
       time: {
         created: Date.now(),
         updated: Date.now(),
@@ -153,6 +162,23 @@ export namespace Session {
       info: result,
     })
     return result
+  }
+
+  export async function createForAgent(
+    agentId: string,
+    initContext: Agent.Context,
+  ): Promise<Info> {
+    const session = await create(undefined, agentId)
+    const fullContext = await AgentServices.loadContext(
+      session.id,
+      agentId,
+      initContext,
+    )
+
+    return (await update(session.id, (draft) => {
+      draft.agent = agentId
+      draft.agentContext = fullContext
+    }))!
   }
 
   export async function get(id: string) {
@@ -295,9 +321,20 @@ export namespace Session {
   }) {
     const l = log.clone().tag("session", input.sessionID)
     l.info("chatting")
-    const model = await Provider.getModel(input.providerID, input.modelID)
     let msgs = await messages(input.sessionID)
     const session = await get(input.sessionID)
+
+    const agentConfig = session.agent
+      ? await AgentServices.loadConfig(session.agent, session.agentContext)
+      : undefined
+
+    const agentModel = agentConfig?.model
+      ? Provider.parseModel(agentConfig.model)
+      : undefined
+
+    const modelID = agentModel ? agentModel?.modelID : input.modelID
+    const providerID = agentModel ? agentModel?.providerID : input.providerID
+    const model = await Provider.getModel(providerID, modelID)
 
     if (session.revert) {
       const trimmed = []
@@ -347,8 +384,8 @@ export namespace Session {
       ) {
         await summarize({
           sessionID: input.sessionID,
-          providerID: input.providerID,
-          modelID: input.modelID,
+          providerID: providerID,
+          modelID: modelID,
         })
         return chat(input)
       }
@@ -416,12 +453,18 @@ export namespace Session {
         return [part]
       }),
     ).then((x) => x.flat())
-    if (msgs.length === 0 && !session.parentID) {
+    if (
+      msgs.length === 0 &&
+      !session.parentID &&
+      Object.values(DEFAULT_TITLE_PREFIX.NEW_SESSION).some((it) =>
+        session.title.startsWith(it),
+      )
+    ) {
       generateText({
-        maxTokens: input.providerID === "google" ? 1024 : 20,
+        maxTokens: providerID === "google" ? 1024 : 20,
         providerOptions: model.info.options,
         messages: [
-          ...SystemPrompt.title(input.providerID).map(
+          ...SystemPrompt.title(providerID).map(
             (x): CoreMessage => ({
               role: "system",
               content: x,
@@ -462,9 +505,15 @@ export namespace Session {
     await updateMessage(msg)
     msgs.push(msg)
 
-    const system = input.system ?? SystemPrompt.provider(input.providerID)
-    system.push(...(await SystemPrompt.environment()))
-    system.push(...(await SystemPrompt.custom()))
+    const agentMessage = agentConfig?.message
+    const system =
+      input.system ?? SystemPrompt.provider(providerID, agentMessage)
+
+    // ignore extra context for agents as it could be redundant or misleading
+    if (!agentMessage) {
+      system.push(...(await SystemPrompt.environment()))
+      system.push(...(await SystemPrompt.custom()))
+    }
 
     const next: Message.Info = {
       id: Identifier.ascending("message"),
@@ -485,8 +534,8 @@ export namespace Session {
             reasoning: 0,
             cache: { read: 0, write: 0 },
           },
-          modelID: input.modelID,
-          providerID: input.providerID,
+          modelID: modelID,
+          providerID: providerID,
         },
         time: {
           created: Date.now(),
@@ -496,9 +545,18 @@ export namespace Session {
       },
     }
     await updateMessage(next)
-    const tools: Record<string, AITool> = {}
 
-    for (const item of await Provider.tools(input.providerID)) {
+    const services = ToolServices.create(session.id)
+    const agentTools = agentConfig
+      ? await AgentServices.loadTools(agentConfig)
+      : undefined
+
+    const tools: Record<string, AITool> = {}
+    for (const item of await Provider.tools(
+      providerID,
+      agentTools?.buildIn,
+      agentTools?.custom,
+    )) {
       tools[item.id.replaceAll(".", "_")] = tool({
         id: item.id as any,
         description: item.description,
@@ -510,6 +568,7 @@ export namespace Session {
               sessionID: input.sessionID,
               abort: abort.signal,
               messageID: next.id,
+              services,
               metadata: async (val) => {
                 next.metadata.tool[opts.toolCallId] = {
                   ...val,
@@ -549,7 +608,9 @@ export namespace Session {
       })
     }
 
-    for (const [key, item] of Object.entries(await MCP.tools())) {
+    for (const [key, item] of Object.entries(
+      await MCP.tools(agentTools?.mcp),
+    )) {
       const execute = item.execute
       if (!execute) continue
       item.execute = async (args, opts) => {
@@ -611,7 +672,7 @@ export namespace Session {
           case LoadAPIKeyError.isInstance(err.error):
             next.metadata.error = new Provider.AuthError(
               {
-                providerID: input.providerID,
+                providerID: providerID,
                 message: err.error.message,
               },
               { cause: err.error },
@@ -667,8 +728,8 @@ export namespace Session {
               if (args.type === "stream") {
                 args.params.prompt = ProviderTransform.message(
                   args.params.prompt,
-                  input.providerID,
-                  input.modelID,
+                  providerID,
+                  modelID,
                 )
               }
               return args.params
@@ -800,7 +861,7 @@ export namespace Session {
         case LoadAPIKeyError.isInstance(e):
           next.metadata.error = new Provider.AuthError(
             {
-              providerID: input.providerID,
+              providerID: providerID,
               message: e.message,
             },
             { cause: e },

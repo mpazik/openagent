@@ -98,11 +98,25 @@ export namespace MCP {
     return state().then((state) => state.clients)
   }
 
-  export async function tools() {
+  export async function tools(
+    enabledTools?: [provider: string, tools: string[] | null][],
+  ) {
     const result: Record<string, Tool> = {}
     for (const [clientName, client] of Object.entries(await clients())) {
+      let allowedTools: string[] | null = null
+
+      if (enabledTools) {
+        const providerConfig = enabledTools.find(
+          ([provider]) => provider === clientName,
+        )
+        if (!providerConfig) continue // Skip provider not in enabledTools
+        allowedTools = providerConfig[1]
+      }
+
       for (const [toolName, tool] of Object.entries(await client.tools())) {
-        result[clientName + "_" + toolName] = tool
+        if (allowedTools === null || allowedTools.includes(toolName)) {
+          result[clientName + "_" + toolName] = tool
+        }
       }
     }
     return result

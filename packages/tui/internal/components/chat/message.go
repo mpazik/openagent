@@ -467,12 +467,82 @@ func renderToolDetails(
 			body = strings.Join(steps, "\n")
 		}
 	default:
-		if result == nil {
-			empty := ""
-			result = &empty
+		handled := false
+
+		if filename, ok := toolArgsMap["filePath"].(string); ok {
+			if content, ok := toolArgsMap["content"].(string); ok {
+				body = util.RenderFile(filename, content, width)
+				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					body += "\n\n" + diagnostics
+				}
+				handled = true
+			} else if diffField := metadata.ExtraFields["diff"]; diffField != nil {
+				// Handle filePath + diff combination (similar to edit tool)
+				patch := diffField.(string)
+				var formattedDiff string
+				formattedDiff, _ = diff.FormatUnifiedDiff(
+					filename,
+					patch,
+					diff.WithWidth(width-2),
+				)
+				body = strings.TrimSpace(formattedDiff)
+				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					style := styles.NewStyle().
+						Background(backgroundColor).
+						Foreground(t.TextMuted()).
+						Padding(1, 2).
+						Width(width - 4)
+					if highlight {
+						style = style.Foreground(t.Text()).Bold(true)
+					}
+					diagnostics = style.Render(diagnostics)
+					body += "\n" + diagnostics
+				}
+				handled = true
+			} else if contentField := metadata.ExtraFields["content"]; contentField != nil {
+				content := contentField.(string)
+				body = util.RenderFile(filename, content, width)
+				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					body += "\n\n" + diagnostics
+				}
+				handled = true
+			}
 		}
-		body = *result
-		body = util.TruncateHeight(body, 10)
+
+		if !handled {
+			if command, ok := toolArgsMap["command"].(string); ok {
+				if stdout := metadata.ExtraFields["stdout"]; stdout != nil {
+					body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
+					body = util.ToMarkdown(body, width, backgroundColor)
+					handled = true
+				}
+			}
+		}
+
+		if !handled && result != nil {
+			body = *result
+			if format, ok := toolArgsMap["format"].(string); ok {
+				if format == "html" || format == "markdown" {
+					body = util.ToMarkdown(body, width, backgroundColor)
+					handled = true
+				}
+			} else if formatField := metadata.ExtraFields["format"]; formatField != nil {
+				format := formatField.(string)
+				if format == "html" || format == "markdown" {
+					body = util.ToMarkdown(body, width, backgroundColor)
+					handled = true
+				}
+			}
+		}
+
+		if !handled {
+			if result == nil {
+				empty := ""
+				result = &empty
+			}
+			body = *result
+			body = util.TruncateHeight(body, 10)
+		}
 	}
 
 	error := ""
@@ -521,10 +591,6 @@ func renderToolTitle(
 ) string {
 	// TODO: handle truncate to width
 
-	if toolCall.ToolInvocation.State == "partial-call" {
-		return renderToolAction(toolCall.ToolInvocation.ToolName)
-	}
-
 	toolArgs := ""
 	toolArgsMap := make(map[string]any)
 	if toolCall.ToolInvocation.Args != nil {
@@ -546,6 +612,10 @@ func renderToolTitle(
 		}
 	}
 
+  if toolCall.ToolInvocation.State == "partial-call" {
+		return renderToolAction(toolCall.ToolInvocation.ToolName, toolArgsMap)
+	}
+
 	title := renderToolName(toolCall.ToolInvocation.ToolName)
 	switch toolCall.ToolInvocation.ToolName {
 	case "read":
@@ -565,13 +635,22 @@ func renderToolTitle(
 	case "todowrite", "todoread":
 		// title is just the tool name
 	default:
-		toolName := renderToolName(toolCall.ToolInvocation.ToolName)
-		title = fmt.Sprintf("%s %s", toolName, toolArgs)
+    if description, ok := toolArgsMap["description"].(string); ok && description != "" {
+      title = fmt.Sprintf("%s %s", title, description)
+    } else if filename, ok := toolArgsMap["filePath"].(string); ok {
+      title = fmt.Sprintf("%s %s", title, util.Relative(filename))
+    } else if query, ok := toolArgsMap["query"].(string); ok {
+      title = fmt.Sprintf("%s %s", title, query)
+    } else if url, ok := toolArgsMap["url"].(string); ok {
+      title = fmt.Sprintf("%s %s", title, url)
+    } else {
+      title = fmt.Sprintf("%s %s", title, toolArgs)
+    }
 	}
 	return title
 }
 
-func renderToolAction(name string) string {
+func renderToolAction(name string, toolArgs map[string]any) string {
 	switch name {
 	case "task":
 		return "Searching..."
@@ -595,6 +674,23 @@ func renderToolAction(name string) string {
 		return "Planning..."
 	case "patch":
 		return "Preparing patch..."
+	}
+	if toolArgs != nil {
+		if _, hasContent := toolArgs["content"]; hasContent {
+			return "Writing..."
+		}
+		if _, hasFilePath := toolArgs["filePath"]; hasFilePath {
+			return "Reading file..."
+		}
+		if _, hasQuery := toolArgs["query"]; hasQuery {
+			return "Searching..."
+		}
+		if _, hasURL := toolArgs["url"]; hasURL {
+			return "Fetching..."
+		}
+		if _, hasCommand := toolArgs["command"]; hasCommand {
+			return "Running command..."
+		}
 	}
 	return "Working..."
 }

@@ -216,8 +216,20 @@ export namespace Server {
             },
           },
         }),
+        zValidator(
+          "json",
+          z
+            .object({
+              agent: z.string(),
+              agentContext: z.object({}).optional(),
+            })
+            .optional(),
+        ),
         async (c) => {
-          const session = await Session.create()
+          const body = c.req.valid("json")
+          const session = body
+            ? await Session.createForAgent(body.agent, body.agentContext)
+            : await Session.create()
           return c.json(session)
         },
       )

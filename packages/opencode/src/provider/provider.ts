@@ -1,4 +1,4 @@
-import z from "zod"
+import z, { type ZodSchema } from "zod"
 import { App } from "../app/app"
 import { Config } from "../config/config"
 import { mergeDeep, sortBy } from "remeda"
@@ -489,28 +489,40 @@ export namespace Provider {
     // TaskTool,
   ]
 
-  const TOOL_MAPPING: Record<string, Tool.Info[]> = {
-    anthropic: TOOLS.filter((t) => t.id !== "patch"),
-    openai: TOOLS.map((t) => ({
-      ...t,
-      parameters: optionalToNullable(t.parameters),
-    })),
-    azure: TOOLS.map((t) => ({
-      ...t,
-      parameters: optionalToNullable(t.parameters),
-    })),
-    google: TOOLS,
+  const TOOL_MAPPING: Record<string, (tools: Tool.Info[]) => Tool.Info[]> = {
+    anthropic: (tools) => tools.filter((t) => t.id !== "patch"),
+    openai: (tools) =>
+      tools.map((t) => ({
+        ...t,
+        parameters: optionalToNullable(t.parameters as ZodSchema),
+      })),
+    azure: (tools) =>
+      tools.map((t) => ({
+        ...t,
+        parameters: optionalToNullable(t.parameters as ZodSchema),
+      })),
+    google: (tools) => tools,
   }
 
-  export async function tools(providerID: string) {
-    /*
-    const cfg = await Config.get()
-    if (cfg.tool?.provider?.[providerID])
-      return cfg.tool.provider[providerID].map(
-        (id) => TOOLS.find((t) => t.id === id)!,
-      )
-        */
-    return TOOL_MAPPING[providerID] ?? TOOLS
+  export async function tools(
+    providerID: string,
+    enabledTools?: string[],
+    customTools?: Tool.Info[],
+  ): Promise<Tool.Info[]> {
+    let tools: Tool.Info[] = []
+
+    if (!enabledTools) {
+      tools = [...TOOLS]
+    } else {
+      tools = TOOLS.filter((tool) => enabledTools.includes(tool.id))
+    }
+
+    if (customTools) {
+      tools.push(...customTools)
+    }
+
+    const mapper = TOOL_MAPPING[providerID]
+    return mapper ? mapper(tools) : tools
   }
 
   function optionalToNullable(schema: z.ZodTypeAny): z.ZodTypeAny {

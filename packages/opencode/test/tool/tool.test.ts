@@ -2,13 +2,16 @@ import { describe, expect, test } from "bun:test"
 import { App } from "../../src/app/app"
 import { GlobTool } from "../../src/tool/glob"
 import { ListTool } from "../../src/tool/ls"
+import { ToolServices } from "../../src/tool/services.ts"
 
 const ctx = {
   sessionID: "test",
   messageID: "",
   abort: AbortSignal.any([]),
   metadata: () => {},
+  services: ToolServices.create(""),
 }
+
 describe("tool.glob", () => {
   test("truncate", async () => {
     await App.provide({ cwd: process.cwd() }, async () => {

@@ -12,12 +12,15 @@ import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 
 export namespace SystemPrompt {
-  export function provider(providerID: string) {
+  export function provider(
+    providerID: string,
+    prompt: string = PROMPT_ANTHROPIC,
+  ): string[] {
     const result = []
     switch (providerID) {
       case "anthropic":
         result.push(PROMPT_ANTHROPIC_SPOOF.trim())
-        result.push(PROMPT_ANTHROPIC)
+        result.push(prompt)
         break
       default:
         result.push(PROMPT_ANTHROPIC)
