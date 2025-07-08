@@ -1,0 +1,20 @@
+<svg width="328" height="50" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <path d="m8,16.5l16,0l0,16.5l-16,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path d="m48,16.5l16,0l0,16.5l-16,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path d="m120,16.5l16,0l0,16.5l-16,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path d="m144,8.5l-8,0l0,33l8,0l0,-33z" fill="white" fill-opacity="0.55"/>
+  <path d="m136,0l-24,0l0,41.5l8,0l0,-33l16,0l0,-8.5z" fill="white" fill-opacity="0.55"/>
+  <path d="m80,0l24,0l0,8.5l-16,0l0,8l16,0l0,8.5l-16,0l0,8l16,0l0,8.5l-24,0l0,-41.5z" fill="white" fill-opacity="0.55"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="m40,0l32,0l0,41.5l-24,0l0,8l-8,0l0,-49.5zm24,8.5l-16,0l0,24.5l16,0l0,-24.5z" fill="white" fill-opacity="0.55"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="m0,0l32,0l0,41.5955l-32,0l0,-41.5955zm24,8.5l-16,0l0,24.5l16,0l0,-24.5z" fill="white" fill-opacity="0.55"/>
+  <path d="m288,0-24,0l0,41.5l8,0l0,-33l16,0l0,-8.5z" fill="white" fill-opacity="0.95"/>
+  <path d="m296,8l-8,0l0,33l8,0l0,-33z" fill="white" fill-opacity="0.95"/>
+  <path d="m272,16,0l0,16.5l-16,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path d="m202,16.5l6,0l0,16.5l-8,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path d="m272,16.5l16,0l0,16.5l-16,0l0,-16.5z" fill="white" fill-opacity="0.2"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" fill="white" fill-opacity="0.95" d="M152,0L184,0L184,41.5L176,41.5L176,33L160,33L160,41.5L152,41.5L152,0ZM176,8.5L160,8.5L160,24.5L168,24.5L176,24.5L176,8.5Z"/>
+  <path fill="white" fill-opacity="0.95" fill-rule="evenodd" clip-rule="evenodd" d="M152,0L184,0L184,41.5L176,41.5L176,33L160,33L160,41.5L152,41.5L152,0ZM176,8.5L160,8.5L160,24.5L168,24.5L176,24.5L176,8.5Z"/>
+  <path fill="white" fill-opacity="0.95" d="M328,0L304,0L304,8.5L312,8.5L312,41.5L320,41.5L320,8.5L328,8.5L328,0Z"/>
+  <path d="m232,0l24,0l0,8.5l-16,0l0,8l16,0l0,8.5l-16,0l0,8l16,0l0,8.5l-24,0l0,-41.5z" fill="white" fill-opacity="0.95"/>
+  <path d="m224,0-32,0l0,48.5l32,0l0,-24-16,0l0,8.5l8,0l0,8.5l-16,0l0,-33l16,0l0,8.5l8,0l0,-16.5" fill="white" fill-opacity="0.95"/>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "dependencies": {
+    "openagent-ai": "0.0.0-202507071607",
+    "openagent-darwin-arm64": "0.0.0-202507071607"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.18",
+    "@types/micromatch": "^4.0.9",
+    "bun": "^1.2.18",
+    "micromatch": "^4.0.8"
+  }
+}
