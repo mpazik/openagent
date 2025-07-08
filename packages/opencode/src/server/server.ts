@@ -220,16 +220,17 @@ export namespace Server {
           "json",
           z
             .object({
-              agent: z.string(),
+              agent: z.string().optional(),
               agentContext: z.object({}).optional(),
             })
             .optional(),
         ),
         async (c) => {
           const body = c.req.valid("json")
-          const session = body
-            ? await Session.createForAgent(body.agent, body.agentContext)
-            : await Session.create()
+          const session =
+            body && body.agent
+              ? await Session.createForAgent(body.agent, body.agentContext)
+              : await Session.create()
           return c.json(session)
         },
       )

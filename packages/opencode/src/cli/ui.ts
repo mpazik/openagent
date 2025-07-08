@@ -57,6 +57,8 @@ export namespace UI {
     }
     result.push(Style.TEXT_INFO_BOLD)
     result.push("fork of sst/opencode")
+    result.push("\x1b[0m")
+    result.push(EOL)
     return result.join("").trimEnd()
   }
 
