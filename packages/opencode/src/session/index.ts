@@ -67,6 +67,7 @@ export namespace Session {
       }),
       agent: z.string().optional(),
       agentContext: Agent.Context,
+      model: z.string().optional(),
       revert: z
         .object({
           messageID: z.string(),
@@ -167,6 +168,7 @@ export namespace Session {
   export async function createForAgent(
     agentId: string,
     initContext: Agent.Context,
+    model?: string,
   ): Promise<Info> {
     const session = await create(undefined, agentId)
     const fullContext = await AgentServices.loadContext(
@@ -178,6 +180,7 @@ export namespace Session {
     return (await update(session.id, (draft) => {
       draft.agent = agentId
       draft.agentContext = fullContext
+      if (model) draft.model = model
     }))!
   }
 
@@ -328,12 +331,13 @@ export namespace Session {
       ? await AgentServices.loadConfig(session.agent, session.agentContext)
       : undefined
 
-    const agentModel = agentConfig?.model
-      ? Provider.parseModel(agentConfig.model)
-      : undefined
+    const resolvedModel = (() => {
+      if (session.model) return Provider.parseModel(session.model)
+      if (agentConfig?.model) return Provider.parseModel(agentConfig.model)
+      return { providerID: input.providerID, modelID: input.modelID }
+    })()
 
-    const modelID = agentModel ? agentModel?.modelID : input.modelID
-    const providerID = agentModel ? agentModel?.providerID : input.providerID
+    const { providerID, modelID } = resolvedModel
     const model = await Provider.getModel(providerID, modelID)
 
     if (session.revert) {

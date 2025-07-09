@@ -56,6 +56,11 @@ export const AgentCommand = cmd({
         type: "string",
         describe: "additional context to pass to the agent (JSON format)",
       })
+      .option("model", {
+        type: "string",
+        alias: ["m"],
+        describe: "model to use in the format of provider/model",
+      })
       .check((argv) => {
         if (!argv.list && !argv.name) {
           throw new Error("Agent name is required unless using --list")
@@ -113,12 +118,14 @@ export const AgentCommand = cmd({
         }
       }
 
-      const session = await Session.createForAgent(agentId, initContext)
+      const session = await Session.createForAgent(agentId, initContext, args.model)
       const agentConfig = await AgentServices.loadConfig(
         agentId,
         session.agentContext,
       )
-      const model = agentConfig.model
+      const model = session.model
+        ? Provider.parseModel(session.model)
+        : agentConfig.model
         ? Provider.parseModel(agentConfig.model)
         : await Provider.defaultModel()
       const modelName = `${model.providerID}/${model.modelID}`
