@@ -5,7 +5,7 @@
     <img src="./fork-assets/logo-light.svg" alt="openagent logo">
   </picture>
 </p>
-<p align="center">CLI based <b>specialized agents</b> for large codebases and non-coding tasks.</p>
+<p align="center">Open source solution for Context and Workflow Engineering.</p>
 <p align="center">Experimental Fork of <a href="https://github.com/sst/opencode">opencode</a></p>
 
 opencode is an open sourced terminal-based AI code assistant similar to claude code. This fork allows building specialized agents with:
